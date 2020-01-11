@@ -1,0 +1,41 @@
+{
+  "title": "Real-time tracking of Zika virus evolution",
+  "colorings": {
+    "gt": {
+      "title": "genotype",
+      "type": "categorical"
+    },
+    "num_date": {
+      "title": "date",
+      "type": "continuous"
+    },
+    "author": {
+      "title": "author",
+      "type": "categorical"
+    },
+    "country": {
+      "title": "country",
+      "type": "categorical"    
+    },
+    "region": {
+      "title": "region",
+      "type": "categorical"        
+    }
+  },
+  "geo_resolutions": [
+    "country",
+    "region"
+  ],
+  "display_defaults": {
+    "map_triplicate": true
+  },  
+  "maintainer": [
+    "Trevor Bedford",
+    "http://bedford.io/team/trevor-bedford/"
+  ],
+  "filters": [
+    "country",
+    "region",
+    "author"
+  ]
+}
