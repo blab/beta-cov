@@ -22,7 +22,7 @@ FEATURES             Location/Qualifiers
                      /mol_type="genomic RNA"
                      /isolate="ZS-C"
                      /db_xref="taxon:249088"
-ORIGIN      
+ORIGIN
         1 agatctgttc tctaaacgaa ctttaaaatc tgtgtagctg tcgctcggct gcatgcctag
        61 tgcacctacg cagtataaac aataataaat tttactgtcg ttgacaagaa acgagtaact
       121 cgtccctctt ctgcagactg cttacggttt cgtccgtgtt gcagtcgatc atcagcatac
@@ -519,4 +519,3 @@ ORIGIN
     29581 gtgctatccc catgtgattt taatagcttc ttaggagaat gacaaaaaaa aaaaaaaaaa
     29641 aaaaaaa
 //
-

@@ -1,13 +1,13 @@
 rule all:
     input:
-        auspice_json = "auspice/coronavirus.json",
+        auspice_json = "auspice/beta-cov.json",
 
 rule files:
     params:
-        input_fasta = "data/coronavirus.fasta",
+        input_fasta = "data/beta-cov.fasta",
         include = "config/include.txt",
         dropped_strains = "config/dropped_strains.txt",
-        reference = "config/coronavirus_reference.gb",
+        reference = "config/betacov_reference.gb",
         auspice_config = "config/auspice_config.json",
         colors = "config/colors.tsv",
         description = "config/description.md"
@@ -17,7 +17,7 @@ files = rules.files.params
 rule download:
     message: "Downloading sequences from fauna"
     output:
-        sequences = "data/coronavirus.fasta"
+        sequences = "data/beta-cov.fasta"
     params:
         fasta_fields = "strain virus accession collection_date region country division location source locus authors url title journal puburl host virus_species"
     shell:
