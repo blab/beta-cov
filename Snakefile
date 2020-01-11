@@ -5,10 +5,12 @@ rule all:
 rule files:
     params:
         input_fasta = "data/coronavirus.fasta",
+        include = "config/include.txt",
         dropped_strains = "config/dropped_strains.txt",
         reference = "config/coronavirus_reference.gb",
+        auspice_config = "config/auspice_config.json",
         colors = "config/colors.tsv",
-        auspice_config = "config/auspice_config.json"
+        description = "config/description.md"
 
 files = rules.files.params
 
@@ -17,7 +19,7 @@ rule download:
     output:
         sequences = "data/coronavirus.fasta"
     params:
-        fasta_fields = "strain virus accession collection_date region country division location source locus authors url title journal puburl"
+        fasta_fields = "strain virus accession collection_date region country division location source locus authors url title journal puburl host virus_species"
     shell:
         """
         python3 ../fauna/vdb/download.py \
@@ -37,7 +39,7 @@ rule parse:
         sequences = "results/sequences.fasta",
         metadata = "results/metadata.tsv"
     params:
-        fasta_fields = "strain virus accession date region country division city db segment authors url title journal paper_url",
+        fasta_fields = "strain virus accession date region country division city db segment authors url title journal paper_url host virus_species",
         prettify_fields = "region country division city"
     shell:
         """
@@ -54,20 +56,19 @@ rule filter:
         """
         Filtering to
           - {params.sequences_per_group} sequence(s) per {params.group_by!s}
-          - from {params.min_date} onwards
           - excluding strains in {input.exclude}
           - minimum genome length of {params.min_length}
         """
     input:
         sequences = rules.parse.output.sequences,
         metadata = rules.parse.output.metadata,
+        include = files.include,
         exclude = files.dropped_strains
     output:
         sequences = "results/filtered.fasta"
     params:
-        group_by = "country year month",
-        sequences_per_group = 20,
-        min_date = 1950,
+        group_by = "country",
+        sequences_per_group = 50,
         min_length = 5000
     shell:
         """
@@ -75,10 +76,10 @@ rule filter:
             --sequences {input.sequences} \
             --metadata {input.metadata} \
             --exclude {input.exclude} \
+            --include {input.include} \
             --output {output.sequences} \
             --group-by {params.group_by} \
             --sequences-per-group {params.sequences_per_group} \
-            --min-date {params.min_date} \
             --min-length {params.min_length}
         """
 
@@ -95,12 +96,7 @@ rule align:
         alignment = "results/aligned.fasta"
     shell:
         """
-        augur align \
-            --sequences {input.sequences} \
-            --reference-sequence {input.reference} \
-            --output {output.alignment} \
-            --fill-gaps \
-            --remove-reference
+        mafft --retree 1 --nofft --thread 2 results/filtered.fasta > results/aligned.fasta
         """
 
 rule tree:
@@ -120,10 +116,6 @@ rule refine:
     message:
         """
         Refining tree
-          - estimate timetree
-          - use {params.coalescent} coalescent timescale
-          - estimate {params.date_inference} node dates
-          - filter tips more than {params.clock_filter_iqd} IQDs from clock expectation
         """
     input:
         tree = rules.tree.output.tree,
@@ -132,83 +124,15 @@ rule refine:
     output:
         tree = "results/tree.nwk",
         node_data = "results/branch_lengths.json"
-    params:
-        coalescent = "opt",
-        date_inference = "marginal",
-        clock_filter_iqd = 4
     shell:
         """
         augur refine \
             --tree {input.tree} \
             --alignment {input.alignment} \
             --metadata {input.metadata} \
+            --root ZBCoV \
             --output-tree {output.tree} \
-            --output-node-data {output.node_data} \
-            --timetree \
-            --coalescent {params.coalescent} \
-            --date-confidence \
-            --date-inference {params.date_inference} \
-            --clock-filter-iqd {params.clock_filter_iqd}
-        """
-
-rule ancestral:
-    message: "Reconstructing ancestral sequences and mutations"
-    input:
-        tree = rules.refine.output.tree,
-        alignment = rules.align.output
-    output:
-        node_data = "results/nt_muts.json"
-    params:
-        inference = "joint"
-    shell:
-        """
-        augur ancestral \
-            --tree {input.tree} \
-            --alignment {input.alignment} \
-            --output {output.node_data} \
-            --inference {params.inference}
-        """
-
-rule translate:
-    message: "Translating amino acid sequences"
-    input:
-        tree = rules.refine.output.tree,
-        node_data = rules.ancestral.output.node_data,
-        reference = files.reference
-    output:
-        node_data = "results/aa_muts.json"
-    shell:
-        """
-        augur translate \
-            --tree {input.tree} \
-            --ancestral-sequences {input.node_data} \
-            --reference-sequence {input.reference} \
-            --output {output.node_data} \
-        """
-
-rule traits:
-    message:
-        """
-        Inferring ancestral traits for {params.columns!s}
-          - increase uncertainty of reconstruction by {params.sampling_bias_correction} to partially account for sampling bias
-        """
-    input:
-        tree = rules.refine.output.tree,
-        metadata = rules.parse.output.metadata
-    output:
-        node_data = "results/traits.json",
-    params:
-        columns = "region country",
-        sampling_bias_correction = 3
-    shell:
-        """
-        augur traits \
-            --tree {input.tree} \
-            --metadata {input.metadata} \
-            --output {output.node_data} \
-            --columns {params.columns} \
-            --confidence \
-            --sampling-bias-correction {params.sampling_bias_correction}
+            --output-node-data {output.node_data}
         """
 
 rule export:
@@ -217,11 +141,9 @@ rule export:
         tree = rules.refine.output.tree,
         metadata = rules.parse.output.metadata,
         branch_lengths = rules.refine.output.node_data,
-        traits = rules.traits.output.node_data,
-        nt_muts = rules.ancestral.output.node_data,
-        aa_muts = rules.translate.output.node_data,
+        auspice_config = files.auspice_config,
         colors = files.colors,
-        auspice_config = files.auspice_config
+        description = files.description
     output:
         auspice_json = rules.all.input.auspice_json
     shell:
@@ -229,9 +151,10 @@ rule export:
         augur export v2 \
             --tree {input.tree} \
             --metadata {input.metadata} \
-            --node-data {input.branch_lengths} {input.traits} {input.nt_muts} {input.aa_muts} \
-            --colors {input.colors} \
+            --node-data {input.branch_lengths} \
             --auspice-config {input.auspice_config} \
+            --colors {input.colors} \
+            --description {input.description} \
             --output {output.auspice_json}
         """
 

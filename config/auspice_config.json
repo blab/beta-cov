@@ -1,41 +1,42 @@
 {
-  "title": "Real-time tracking of Zika virus evolution",
-  "colorings": {
-    "gt": {
-      "title": "genotype",
+  "title": "Genetic diversity of betacoronaviruses including novel coronavirus from Wuhan",
+  "maintainers": [
+    {"name": "Trevor Bedford", "url": "http://bedford.io/team/trevor-bedford/"}
+  ],
+  "build_url": "https://github.com/blab/beta-cov",
+  "colorings": [
+    {
+      "key": "virus_species",
+      "title": "virus species",
       "type": "categorical"
     },
-    "num_date": {
-      "title": "date",
-      "type": "continuous"
-    },
-    "author": {
-      "title": "author",
+    {
+      "key": "host",
+      "title": "host",
       "type": "categorical"
     },
-    "country": {
+    {
+      "key": "country",
       "title": "country",
-      "type": "categorical"    
+      "type": "categorical"
     },
-    "region": {
+    {
+      "key": "region",
       "title": "region",
-      "type": "categorical"        
+      "type": "categorical"
     }
-  },
+  ],
   "geo_resolutions": [
-    "country",
-    "region"
+    "country"
   ],
   "display_defaults": {
+    "color_by": "virus_species",
     "map_triplicate": true
-  },  
-  "maintainer": [
-    "Trevor Bedford",
-    "http://bedford.io/team/trevor-bedford/"
-  ],
+  },
   "filters": [
+    "virus_species",
+    "host",
     "country",
-    "region",
-    "author"
+    "region"
   ]
 }
