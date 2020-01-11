@@ -1,9 +1,9 @@
 # Files created by the pipeline, which we want to keep out of git
 # (or at least out of _this_ git repo).
-data/
 results/
 auspice/
 build/
+
 
 # Sensitive environment variables
 environment*
